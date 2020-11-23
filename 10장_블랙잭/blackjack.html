@@ -1,0 +1,304 @@
+<html>
+<head>
+    <title>블랙잭</title>
+ <style>
+ body {
+	background-color:white;
+	color: black;
+	font-size:18px;
+	font-family:Verdana, Geneva, sans-serif;
+}
+footer {
+	display:block;
+	font-family:Tahoma, Geneva, sans-serif;
+	text-align: center;
+	font-style:oblique;
+}
+header {
+	width:100%;
+	display:block;
+}
+
+ </style>
+    <script>
+var cwidth = 800;
+var cheight = 600;
+var cardw = 75;
+var cardh = 107;
+var playerxp = 100;
+var playeryp = 300;
+var housexp = 500;
+var houseyp = 100;
+var housetotal;
+var playertotal;
+var pi = 0;
+var hi = 0;
+var deck = [];
+var playerhand = [];
+var househand = [];
+var back = new Image();
+
+function init() {
+  ctx = document.getElementById('canvas').getContext('2d'); 
+  ctx.font="italic 20pt Georgia";
+  ctx.fillStyle = "blue";
+  builddeck();
+  back.src ="cardback.png";
+ 
+    canvas1 = document.getElementById('canvas');
+    window.addEventListener('keydown',getkey,false);
+  shuffle();
+  dealstart();
+ }
+ 
+ function getkey(event) {
+  var keyCode; 
+  if(event == null)
+  {
+    keyCode = window.event.keyCode; 
+	window.event.preventDefault();
+  }
+  else 
+  {
+    keyCode = event.keyCode; 
+	event.preventDefault();
+  }
+  switch(keyCode)
+  {
+      case 68:  
+      deal();
+      break; 
+    case 72:  
+     playerdone();
+      break; 
+    case 78: 
+     newgame();
+      break; 
+  
+	default:
+	alert("d, h, n 중 하나를 누르세요.");
+ 	 }
+  
+ }
+ 
+function dealstart() {
+    playerhand[pi] = dealfromdeck(1);
+	ctx.drawImage(playerhand[pi].picture,playerxp,playeryp,cardw,cardh);
+	playerxp = playerxp+30;
+    pi++;
+    househand[hi] = dealfromdeck(2);
+	ctx.drawImage(back,housexp,houseyp,cardw,cardh);
+    housexp = housexp+20;
+    hi++;
+    playerhand[pi] = dealfromdeck(1);
+    ctx.drawImage(playerhand[pi].picture,playerxp,playeryp,cardw,cardh);
+    playerxp = playerxp+30;
+    pi++;
+    househand[hi] = dealfromdeck(2);
+    ctx.drawImage(househand[hi].picture,housexp,houseyp,cardw,cardh);
+    housexp = housexp+20;
+    hi++;
+  }
+  
+ function deal() {
+    playerhand[pi] = dealfromdeck(1);
+    ctx.drawImage(playerhand[pi].picture,playerxp,playeryp,cardw,cardh);
+    playerxp = playerxp+30;
+    pi++;
+    if (more_to_house()) {
+      // 하우스에게 카드 한 장 추가
+      househand[hi] = dealfromdeck(2);
+    ctx.drawImage(househand[hi].picture,housexp,houseyp,cardw,cardh);
+    housexp = housexp+20;
+    hi++;
+    }
+ }
+ 
+function more_to_house(){
+  // 합계가 17점 미만이면 항상 카드를 추가하는 방식을 사용
+  var ac = 0;
+  var i;
+  var sumup = 0;
+  
+  for (i=0;i<hi;i++) {
+    sumup += househand[i].value;
+	
+    if (househand[i].value==1) {ac++;}
+  }
+  // 에이스일 때, 에이스를 11점으로 계산하면 21점을 초과하는지 검사
+  if (ac>0) {
+    if ((sumup+10)<=21) {
+       sumup +=10;
+    }    
+  }
+  housetotal = sumup;
+  
+  if (sumup<17) {
+   return true; 
+  }
+  else {
+    return false;
+  }
+}
+
+
+ 
+function dealfromdeck(who) {
+  // 0부터 시작해서 카드를 나눠줌. 카드를 모두 나눠줬는지 검사
+  var card;
+  var ch = 0;
+  while ((deck[ch].dealt>0)&&(ch<51)) {
+    ch++;
+  }
+  if (ch>=51) {
+    ctx.fillText("카드가 없습니다. 새로고침 하세요. ",200,250);
+    
+    ch = 51;  // 단순히 나머지 코드를 돌아가게 함
+  }
+  
+  deck[ch].dealt = who;
+  card = deck[ch];
+  return card;
+}
+
+
+function builddeck() {
+  // sketch 폴더 안의 그림 파일로 데크를 생성
+ var n;
+ var si;
+ var suitnames= ["clubs","hearts","spades","diamonds"];
+ var i;
+ i=0;
+ var picname;
+ var nums=["a","2","3","4","5","6","7","8","9","10","j","q","k"];
+ for (si=0;si<4;si++) {
+   for (n=0;n<13;n++) {
+     picname=suitnames[si]+"-"+nums[n]+"-75.png";
+     deck[i]=new MCard(n+1,suitnames[si],picname);
+     i++;
+   }
+ }
+}
+
+ 
+function MCard(n, s, picname){
+   this.num = n;
+   if (n>10) n = 10; // J, Q, K에 해당하는 값을 지정
+   this.value = n;
+   this.suit = s;
+   this.picture = new Image();
+   this.picture.src = picname;
+   this.dealt = 0;
+ }
+
+
+
+function add_up_player() {
+var ac = 0;
+var i;
+var sumup = 0;
+  for (i=0;i<pi;i++) {
+    sumup += playerhand[i].value;
+    if (playerhand[i].value==1) 
+      {ac++;
+    }
+  }
+  // 21점이 초과되지 않을 때만 에이스를 11점으로 계산
+  if (ac>0) {
+    if ((sumup+10)<=21) {
+      sumup +=10;
+    }
+  }
+  return  sumup;
+}
+function playerdone() {
+       // 하우스가 계속 카드를 받게 됨
+   while(more_to_house()) {
+    househand[hi] = dealfromdeck(2);
+    ctx.drawImage(back,housexp,houseyp,cardw,cardh);
+    housexp = housexp+20;
+    hi++;     
+   }
+  // 하우스 카드 보이기
+  showhouse();
+  // 플레이어 총점을 구함
+    playertotal = add_up_player();
+     
+    if (playertotal>21){
+      if (housetotal>21) {
+        ctx.fillText("무승부! 사용자와 하우스가 21점을 초과함.",30,100);
+      }
+      else {
+     ctx.fillText("패배! 사용자가 21점을 초과함.",30,100); 
+      }
+    }
+    else 
+      if (housetotal>21) {
+        ctx.fillText("승리! 하우스가 21점을 초과함.",30,100);
+      }
+      else
+      if (playertotal>=housetotal) {
+        if (playertotal>housetotal) {
+        ctx.fillText("승리. ",30,100);
+        }
+        else {
+         ctx.fillText("무승부!",30,100); 
+        }
+        }
+      else 
+        if (housetotal<=21) {
+        ctx.fillText("패배. ", 30,100);
+        }
+        else {
+         ctx.filltext("승리! 하우스가 21점을 초과함.");
+        }
+  } 
+  
+function newgame() {
+  ctx.clearRect(0,0,cwidth,cheight);
+  pi=0;
+  hi=0;
+  playerxp = 100; 
+  housexp= 500;
+  dealstart();
+} // 함수 종료
+
+function showhouse() {
+  // 하우스 카드 보이기
+  var i;
+  housexp= 500;
+  for (i=0;i<hi;i++) {
+     ctx.drawImage(househand[i].picture,housexp,houseyp,cardw,cardh);
+     housexp = housexp+20;
+  }  
+}
+
+function shuffle() {
+  var i = deck.length - 1;
+  var s;
+  while (i>0) {
+	  s = Math.floor(Math.random()*(i+1));
+	  swapindeck(s,i);
+	  i--;
+  }
+  }
+ 
+ function swapindeck(j,k) {
+	var hold = new MCard(deck[j].num,deck[j].suit,deck[j].picture.src);
+	deck[j] = deck[k];
+	deck[k] = hold;
+ }
+
+</script>
+</head>
+<body onLoad="init();">  
+<header>카드 한 장 추가는 <b>d</b>, 홀딩은 <b>h</b>, 새 게임은 <b>n</b>을 누르세요.</header>
+<canvas id="canvas" width="800" height="500">
+이 브라우저는 HTML5의 canvas 요소를 지원하지 않습니다.
+</canvas>  
+<footer>카드 그림 출처: http://www.eludication.org/playingcards.html, 크리에이티브 커먼스 라이선스(http://creativecommons.org/licenses/by-sa/2.5/).
+<br/>
+Fisher-Yates 섞기 알고리즘:http://eli.thegreenplace.net/2010/05/28/the-intuition-behind-fisher-yates-shuffling
+</footer>
+</body>
+</html>
